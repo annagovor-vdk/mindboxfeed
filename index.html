@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Заявка контрагента</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 text-gray-800">
+  <div class="max-w-4xl mx-auto p-6 bg-white shadow-md rounded-lg mt-8">
+    <h1 class="text-2xl font-semibold mb-6">Заявка на заказ подарочных карт</h1>
+    <form id="applicationForm" class="space-y-8">
+
+      <!-- ИНН и получение данных -->
+      <div>
+        <label class="block font-medium">ИНН организации</label>
+        <div class="flex gap-4 mt-2">
+          <input type="text" id="inn" name="inn" class="flex-1 input" placeholder="Введите ИНН" required>
+          <button type="button" onclick="fetchDaData()" class="btn">Заполнить</button>
+        </div>
+        <div id="orgData" class="mt-4 hidden bg-gray-50 p-4 rounded border">
+          <p><strong>Наименование:</strong> <span id="orgName"></span></p>
+          <p><strong>КПП:</strong> <span id="orgKpp"></span></p>
+          <p><strong>Юр. адрес:</strong> <span id="orgAddress"></span></p>
+        </div>
+        <label class="flex items-center mt-4">
+          <input type="checkbox" id="confirmOrg" onchange="toggleOrgFields()" class="mr-2">
+          Я подтверждаю, что данные корректны
+        </label>
+      </div>
+
+      <!-- Дополнительные реквизиты -->
+      <fieldset id="orgDetails" class="grid grid-cols-1 md:grid-cols-2 gap-4 opacity-50 pointer-events-none">
+        <legend class="text-lg font-semibold col-span-full">Дополнительные реквизиты</legend>
+        <input type="text" name="factAddress" placeholder="Фактический адрес" class="input">
+        <input type="text" name="contactName" placeholder="ФИО контактного лица" class="input">
+        <input type="tel" name="contactPhone" placeholder="Телефон" class="input">
+        <input type="email" name="contactEmail" placeholder="Email" class="input">
+        <input type="text" name="recipient" placeholder="Получатель (если отличается)" class="input">
+      </fieldset>
+
+      <!-- Тип карты и дизайн -->
+      <div class="space-y-4">
+        <div>
+          <label class="block font-medium">Тип карты</label>
+          <select name="cardType" id="cardType" onchange="toggleCardholder()" class="input">
+            <option value="epk">Электронные</option>
+            <option value="ppk">Пластиковые</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block font-medium">Дизайн карты</label>
+          <select name="cardDesign" multiple class="input h-32">
+            <option value="design1">Дизайн 1</option>
+            <option value="design2">Дизайн 2</option>
+          </select>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <input type="number" name="quantity" min="1" placeholder="Количество" class="input">
+          <input type="number" name="denomination" min="1" placeholder="Номинал" class="input">
+        </div>
+
+        <div id="cardholderDesign" class="hidden">
+          <label class="block font-medium">Дизайн картхолдера</label>
+          <select name="cardholder" class="input">
+            <option value="holder1">Картхолдер 1</option>
+            <option value="holder2">Картхолдер 2</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Скидка -->
+      <div class="bg-gray-50 p-4 rounded">
+        <p>Итого по виду карты: <span id="sumPerCard">0</span> ₽</p>
+        <p>Скидка: <span id="discountPercent">0%</span></p>
+        <p>Сумма скидки: <span id="discountAmount">0</span> ₽</p>
+        <p>Без скидки: <span id="totalWithoutDiscount">0</span> ₽</p>
+        <p class="font-semibold">Итого: <span id="totalWithDiscount">0</span> ₽</p>
+      </div>
+
+      <!-- Доп. параметры -->
+      <div class="space-y-4">
+        <div>
+          <label class="block font-medium">Регион</label>
+          <select id="region" name="region" onchange="togglePickupLocation()" class="input">
+            <option value="">Выберите регион</option>
+            <option value="msk">Москва</option>
+            <option value="spb">Санкт-Петербург</option>
+            <option value="other">Другой</option>
+          </select>
+        </div>
+        <div id="pickupLocation" class="hidden">
+          <label class="block font-medium">Место выдачи</label>
+          <select name="pickupPlace" class="input">
+            <option value="store1">Магазин 1</option>
+            <option value="warehouse1">Склад 1</option>
+          </select>
+        </div>
+        <textarea name="comment" placeholder="Дополнительная информация" class="input h-24"></textarea>
+        <label class="flex items-center">
+          <input type="checkbox" name="callback" class="mr-2"> Заказать обратный звонок
+        </label>
+      </div>
+
+      <!-- Отправка -->
+      <div class="text-right">
+        <button type="submit" class="btn">Отправить заявку</button>
+      </div>
+    </form>
+  </div>
+
+  <style>
+    .input {
+      width: 100%;
+      padding: 0.5rem;
+      border: 1px solid #d1d5db;
+      border-radius: 0.375rem;
+      background-color: white;
+    }
+    .btn {
+      background-color: #2563eb;
+      color: white;
+      padding: 0.5rem 1rem;
+      border-radius: 0.375rem;
+      font-weight: 500;
+      transition: background-color 0.2s;
+    }
+    .btn:hover {
+      background-color: #1e40af;
+    }
+  </style>
+
+  <script>
+    function fetchDaData() {
+      document.getElementById('orgData').classList.remove('hidden');
+      document.getElementById('orgName').textContent = 'ООО "Пример"';
+      document.getElementById('orgKpp').textContent = '123456789';
+      document.getElementById('orgAddress').textContent = 'г. Москва, ул. Примерная, д. 1';
+    }
+
+    function toggleOrgFields() {
+      const confirmed = document.getElementById('confirmOrg').checked;
+      const details = document.getElementById('orgDetails');
+      if (confirmed) {
+        details.classList.remove('opacity-50', 'pointer-events-none');
+      } else {
+        details.classList.add('opacity-50', 'pointer-events-none');
+      }
+    }
+
+    function toggleCardholder() {
+      const show = document.getElementById('cardType').value === 'ppk';
+      document.getElementById('cardholderDesign').classList.toggle('hidden', !show);
+    }
+
+    function togglePickupLocation() {
+      const show = document.getElementById('region').value === 'other';
+      document.getElementById('pickupLocation').classList.toggle('hidden', !show);
+    }
+  </script>
+</body>
+</html>
